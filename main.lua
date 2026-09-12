@@ -105,6 +105,23 @@ task.spawn(function()
     end
 end)
 
+-- AUTO LOBBY (fires ReturnToLobby every 1s while ON)
+local lbLoop=false
+local function startLB()
+    if lbLoop then return end
+    lbLoop=true
+    task.spawn(function()
+        while Cfg.lb do
+            local tl=RS:FindFirstChild("ReturnToLobby")
+            if tl and tl:IsA("RemoteEvent") then
+                if pcall(function() tl:FireServer() end) then C.L=C.L+1;rfC() end
+            end
+            task.wait(1)
+        end
+        lbLoop=false
+    end)
+end
+
 Tab:CreateToggle({Name="Auto Summon 10",CurrentValue=Cfg.s10,Callback=function(v)
     local on
     if type(v)=="table" then on=v.Value==true else on=v==true end
@@ -176,20 +193,6 @@ local function startRP()
         rpL=false
     end)
 end
-
-task.spawn(function()
-    local lf2=false
-    while true do
-        if lose() then
-            if Cfg.lb and not Cfg.rp and not lf2 then
-                lf2=true;task.wait(3)
-                local tl=RS:FindFirstChild("ReturnToLobby")
-                if tl and pcall(function() tl:FireServer() end) then C.L=C.L+1;rfC() end
-            end
-        elseif lf2 then lf2=false end
-        task.wait(.2)
-    end
-end)
 
 -- HOOK
 pcall(function()
@@ -293,7 +296,12 @@ P:CreateDropdown({Name="Game Speed",Options={"1","1.50","2"},CurrentOption=tostr
 end})
 P:CreateToggle({Name="Auto Skip Wave",CurrentValue=Cfg.sk,Callback=function(v) set("sk",v) if v then lastW=nil;setVis(true)else setVis(false)end end})
 P:CreateToggle({Name="Auto Replay",CurrentValue=Cfg.rp,Callback=function(v) set("rp",v) if v then startRP()else rpL=false end end})
-P:CreateToggle({Name="Auto Lobby",CurrentValue=Cfg.lb,Callback=function(v) set("lb",v) end})
+P:CreateToggle({Name="Auto Lobby",CurrentValue=Cfg.lb,Callback=function(v)
+    local on
+    if type(v)=="table" then on=v.Value==true else on=v==true end
+    set("lb",on)
+    if on then startLB() else lbLoop=false end
+end})
 
 -- MACRO TAB
 M:CreateInput({Name="Macro Name",CurrentValue=Cfg.mn,PlaceholderText="np. EasyFarm",RemoveTextAfterFocusLost=false,Callback=function(t) set("mn",t or "") end})
@@ -349,6 +357,7 @@ task.spawn(function()
     if gs then local g=ens("g","RemoteEvents","SetGameSpeed") if g then pcall(function() g:FireServer(gs) end) end end
     if Cfg.sk then lastW=nil;setVis(true) end
     if Cfg.rp then startRP() end
+    if Cfg.lb then startLB() end
     if sDD and Cfg.sel~="" then pcall(function() sDD:Set(Cfg.sel) end) end
     if Cfg.rec and Cfg.sel~="" then
         resetRec();rec.active=true
