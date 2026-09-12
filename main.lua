@@ -8,117 +8,126 @@ if not ok or not RF then warn("[TD] RF FAIL")return end
 local W=RF:CreateWindow({Name="EZVC Hub",LoadingTitle="EZVC",LoadingSubtitle="...",ConfigurationSaving={Enabled=false},Discord={Enabled=false},KeySystem=false})
 task.spawn(function()
     task.wait(.8)
-    local function fm()
-        local r
-        if gethui then local o,h=pcall(gethui); if o and h then r=h:FindFirstChild("Rayfield") end end
-        if not r then local cg=game:GetService("CoreGui"); if cg then r=cg:FindFirstChild("Rayfield") end end
-        return r and r:FindFirstChild("Main")
-    end
-    local cam=workspace.CurrentCamera; if not cam then return end
-    local vh=cam.ViewportSize.Y; if not vh or vh<=0 then return end
-    local m=fm(); if not m then return end
-    if m.AbsoluteSize.Y>vh*.85 then
+    local r
+    if gethui then local o,h=pcall(gethui); if o and h then r=h:FindFirstChild("Rayfield") end end
+    if not r then local cg=game:GetService("CoreGui"); if cg then r=cg:FindFirstChild("Rayfield") end end
+    local m=r and r:FindFirstChild("Main")
+    local cam=workspace.CurrentCamera
+    if not m or not cam then return end
+    local vh=cam.ViewportSize.Y
+    if vh and vh>0 and m.AbsoluteSize.Y>vh*.85 then
         local nh=math.floor(vh*.8)
         pcall(function() m.Size=UDim2.new(0,500,0,nh); m.Position=UDim2.new(.5,-250,.5,-math.floor(nh/2)) end)
     end
 end)
-local P,M=W:CreateTab("Play"),W:CreateTab("Macro")
+local Tab,P,M=W:CreateTab("Main"),W:CreateTab("Play"),W:CreateTab("Macro")
 local RS,HS=game:GetService("ReplicatedStorage"),game:GetService("HttpService")
 local PLR=game:GetService("Players").LocalPlayer
 local FO="tdmacro/" local CF=FO.."config.json"
 if type(isfolder)=="function" and type(makefolder)=="function" and not isfolder(FO) then pcall(makefolder,FO) end
-
-local function wj(p,d)
-    if type(writefile)~="function" then return false end
-    local o,s=pcall(function()return HS:JSONEncode(d)end)
-    if not o then return false end
-    return pcall(writefile,p,s)
-end
-local function rj(p)
-    if type(isfile)~="function" or type(readfile)~="function" or not isfile(p)then return nil end
-    local o,d=pcall(readfile,p);if not o then return nil end
-    local k,a=pcall(function()return HS:JSONDecode(d)end)
-    if not k or type(a)~="table" then return nil end
-    return a
-end
+local function wj(p,d) if type(writefile)~="function" then return false end local o,s=pcall(function()return HS:JSONEncode(d)end) if not o then return false end return pcall(writefile,p,s) end
+local function rj(p) if type(isfile)~="function" or type(readfile)~="function" or not isfile(p)then return nil end local o,d=pcall(readfile,p) if not o then return nil end local k,a=pcall(function()return HS:JSONDecode(d)end) if not k or type(a)~="table" then return nil end return a end
 local function lf()
     if type(listfiles)~="function" then return{}end
     local sn,n={},{}
-    for _,p in ipairs{FO,"tdmacro","./tdmacro/"}do
-        local o,l=pcall(listfiles,p)
-        if o and type(l)=="table" then for _,f in ipairs(l)do local x=tostring(f):match("([^/\\]+)%.json$");if x and x~="state" and x~="config" and not sn[x]then sn[x]=true;n[#n+1]=x end end end
-    end
+    for _,p in ipairs{FO,"tdmacro","./tdmacro/"}do local o,l=pcall(listfiles,p) if o and type(l)=="table" then for _,f in ipairs(l)do local x=tostring(f):match("([^/\\]+)%.json$") if x and x~="state" and x~="config" and not sn[x]then sn[x]=true;n[#n+1]=x end end end end
     return n
 end
-local function rd(d,o)
-    if not d then return end
-    if type(d.Refresh)=="function" then pcall(d.Refresh,d,o)end
-    if type(d.SetOptions)=="function" then pcall(d.SetOptions,d,o)end
-end
+local function rd(d,o) if not d then return end if type(d.Refresh)=="function" then pcall(d.Refresh,d,o)end if type(d.SetOptions)=="function" then pcall(d.SetOptions,d,o)end end
 
 local Cfg={}
-do local c=rj(CF); if c and type(c)=="table" then Cfg=c end end
-local D={diff="Easy Mode",gs="1",mn="",sel="",sk=false,rp=false,lb=false,st=false,rec=false,pl=false}
-for k,v in pairs(D) do if Cfg[k]==nil then Cfg[k]=v end end
+do local c=rj(CF) if c and type(c)=="table" then Cfg=c end end
+for k,v in pairs({gs="1",mn="",sel="",sk=false,rp=false,lb=false,rec=false,pl=false,s10=false,s1=false,spn=false})do if Cfg[k]==nil then Cfg[k]=v end end
 local _init=true local _pend=false
-local function save()
-    if _init or _pend then return end
-    _pend=true
-    task.spawn(function() task.wait(.2);_pend=false;pcall(function() wj(CF,Cfg) end) end)
-end
+local function save() if _init or _pend then return end _pend=true task.spawn(function() task.wait(.2);_pend=false;pcall(function() wj(CF,Cfg) end) end) end
 local function set(k,v) Cfg[k]=v;save() end
 
 local cL,sDD,sel=nil,nil,Cfg.sel or ""
 local C={L=0,P=0,U=0,S=0}
-local rec={a={},i=1,n=1,t={},k={},l=0,active=false}
+local rec={a={},n=1,t={},k={},l=0,active=false}
 local R={}
 local function ens(k,f,n)
     if R[k] and R[k].Parent then return R[k] end
-    local fo=RS:FindFirstChild(f);if not fo then return nil end
+    local fo=RS:FindFirstChild(f) if not fo then return nil end
     local r=fo:FindFirstChild(n)
     if r and (r:IsA("RemoteEvent") or r:IsA("RemoteFunction")) then R[k]=r;return r end
-    return nil
 end
 local function N(t,c)pcall(function()RF:Notify({Title=t,Content=c,Duration=4})end)end
-local function nm(o)
-    if type(o)=="string" or type(o)=="number" then return tostring(o)end
-    if type(o)=="table" then return tostring(o.Name or o.Value or o[1]or"")end
-    return tostring(o or"")
-end
+local function nm(o) if type(o)=="string" or type(o)=="number" then return tostring(o)end if type(o)=="table" then return tostring(o.Name or o.Value or o[1]or"")end return tostring(o or"") end
 local function rfC()if cL then pcall(function()cL:Set(string.format("Lobby %d | Place %d | Upgrade %d | Sell %d",C.L,C.P,C.U,C.S))end)end end
-local function vis(d)
-    if not d.Visible then return false end
-    local p=d.Parent
-    while p do if p:IsA("GuiObject") and not p.Visible then return false end;p=p.Parent end
-    return true
-end
+local function vis(d) if not d.Visible then return false end local p=d.Parent while p do if p:IsA("GuiObject")and not p.Visible then return false end p=p.Parent end return true end
 local function fB(tx)
     local nd=tx:lower()
     local rr={PLR:FindFirstChild("PlayerGui")}
-    if gethui then local o,h=pcall(gethui);if o and h then rr[#rr+1]=h end end
+    if gethui then local o,h=pcall(gethui) if o and h then rr[#rr+1]=h end end
     for _,r in ipairs(rr)do if r then for _,d in ipairs(r:GetDescendants())do
         if (d:IsA("TextButton")or d:IsA("ImageButton"))and vis(d)then
             local t=d.Text
-            if d:IsA("ImageButton")then local lb=d:FindFirstChildOfClass("TextLabel");if lb then t=lb.Text end end
+            if d:IsA("ImageButton")then local lb=d:FindFirstChildOfClass("TextLabel") if lb then t=lb.Text end end
             if tostring(t or""):lower():find(nd,1,true)then return d end
         end
     end end end
 end
 local function lose()return fB("replay")~=nil end
-local function resetRec()
-    rec.a={};rec.i=1;rec.n=1;rec.t={};rec.k={};rec.l=tick()
-    C.P=0;C.U=0;C.S=0;rfC()
-end
+local function resetRec() rec.a={};rec.n=1;rec.t={};rec.k={};rec.l=tick() C.P=0;C.U=0;C.S=0;rfC() end
 
+-- AUTO SUMMON
+local function invokeSummon(a)
+    local ev
+    pcall(function() local fo=RS:FindFirstChild("RemoteFunctions") if fo then ev=fo:FindFirstChild("SummonUnits") end end)
+    if not ev or not ev:IsA("RemoteFunction") then return false end
+    return pcall(function() ev:InvokeServer(a) end)
+end
 task.spawn(function()
-    local wasLose=false
+    while true do
+        if Cfg.s10 then if invokeSummon(10) then C.L=C.L+1;rfC() end task.wait(1) else task.wait(.5) end
+    end
+end)
+task.spawn(function()
+    while true do
+        if Cfg.s1 then if invokeSummon(1) then C.L=C.L+1;rfC() end task.wait(1) else task.wait(.5) end
+    end
+end)
+
+-- AUTO SPIN
+task.spawn(function()
+    while true do
+        if Cfg.spn then
+            local ev
+            pcall(function() local fo=RS:FindFirstChild("RemoteFunctions") if fo then ev=fo:FindFirstChild("SpinWheel") end end)
+            if ev and ev:IsA("RemoteFunction") then
+                pcall(function() ev:InvokeServer() end)
+            end
+            task.wait(.5)
+        else
+            task.wait(.2)
+        end
+    end
+end)
+
+Tab:CreateToggle({Name="Auto Summon 10",CurrentValue=Cfg.s10,Callback=function(v)
+    local on
+    if type(v)=="table" then on=v.Value==true else on=v==true end
+    set("s10",on)
+end})
+Tab:CreateToggle({Name="Auto Summon 1",CurrentValue=Cfg.s1,Callback=function(v)
+    local on
+    if type(v)=="table" then on=v.Value==true else on=v==true end
+    set("s1",on)
+end})
+Tab:CreateToggle({Name="Auto Spin",CurrentValue=Cfg.spn,Callback=function(v)
+    local on
+    if type(v)=="table" then on=v.Value==true else on=v==true end
+    set("spn",on)
+end})
+
+-- ROUND WATCHER
+task.spawn(function()
+    local was=false
     while true do
         local now=lose()
-        if now and not wasLose and rec.active then
-            resetRec()
-            print("[REC] Round ended — buffer discarded")
-        end
-        wasLose=now
+        if now and not was and rec.active then resetRec() end
+        was=now
         task.wait(.5)
     end
 end)
@@ -128,13 +137,10 @@ local function getWS() local o,ws=pcall(function()return RS:WaitForChild("WaveSt
 local function getBtn() local o,b=pcall(function()return PLR.PlayerGui.MainGameUI.UpSide.InfoDop.AutoSkip end) return o and b or nil end
 local function setVis(on)
     pcall(function()
-        local b=getBtn();if not b then return end
-        for _,v in ipairs(b:GetDescendants())do
-            if v:IsA("UIGradient")then
-                if v.Name=="AutoOff" then v.Enabled=not on
-                elseif v.Name=="AutoOn" then v.Enabled=on end
-            end
-        end
+        local b=getBtn() if not b then return end
+        for _,v in ipairs(b:GetDescendants())do if v:IsA("UIGradient")then
+            if v.Name=="AutoOff"then v.Enabled=not on elseif v.Name=="AutoOn"then v.Enabled=on end
+        end end
     end)
 end
 task.spawn(function()
@@ -185,27 +191,7 @@ task.spawn(function()
     end
 end)
 
-task.spawn(function()
-    local last=0
-    while true do
-        if Cfg.st and fB("found") and tick()-last>3 then
-            local b=fB(Cfg.diff)
-            if b then
-                if getconnections then pcall(function() for _,c in ipairs(getconnections(b.MouseButton1Click)) do if c.Fire then c:Fire() end end end) end
-                pcall(function() b.MouseButton1Click:Fire() end)
-            end
-            task.wait(.2)
-            local b2=fB("found")
-            if b2 then
-                if getconnections then pcall(function() for _,c in ipairs(getconnections(b2.MouseButton1Click)) do if c.Fire then c:Fire() end end end) end
-                pcall(function() b2.MouseButton1Click:Fire() end)
-                last=tick();C.L=C.L+1;rfC()
-            end
-        end
-        task.wait(.5)
-    end
-end)
-
+-- HOOK
 pcall(function()
     if not(getrawmetatable and setreadonly and newcclosure and getnamecallmethod) then return end
     local mt=getrawmetatable(game);local old=mt.__namecall
@@ -228,7 +214,7 @@ pcall(function()
                         local bd,b=20,nil
                         if tw then for _,xx in ipairs(tw:GetChildren()) do if not rec.k[xx] then
                             local o,q=pcall(function() return xx:GetPivot().Position end)
-                            if o and q then local d=(q-cf.Position).Magnitude; if d<bd then b,bd=xx,d end end
+                            if o and q then local d=(q-cf.Position).Magnitude if d<bd then b,bd=xx,d end end
                         end end end
                         local id=rec.n;rec.n=id+1
                         if b then rec.t[id]=b;rec.k[b]=id end
@@ -254,17 +240,15 @@ pcall(function()
     setreadonly(mt,true)
 end)
 
-local buf=nil
+-- PLAY LOOP
 local pToggle
-
--- Auto Play — ciągła pętla jak Auto Replay. Dopóki Cfg.pl==true, odtwarza macro w kółko.
 task.spawn(function()
     local function nf(p,ctx)
-        local tw=workspace:FindFirstChild("Towers");if not tw then return nil end
+        local tw=workspace:FindFirstChild("Towers") if not tw then return nil end
         local bd,b=20,nil
         for _,x in ipairs(tw:GetChildren())do if not ctx.k[x]then
             local o,q=pcall(function()return x:GetPivot().Position end)
-            if o and q then local d=(q-p).Magnitude;if d<bd then b,bd=x,d end end
+            if o and q then local d=(q-p).Magnitude if d<bd then b,bd=x,d end end
         end end
         return b
     end
@@ -284,70 +268,53 @@ task.spawn(function()
                                 local cf=CFrame.new(a.p[1],a.p[2],a.p[3])
                                 pcall(function() PL:InvokeServer(a.n,cf) end)
                                 local t0=tick()
-                                while tick()-t0<2 do local i=nf(cf.Position,P2);if i then P2.t[a.i]=i;P2.k[i]=a.i;break end;task.wait(.05) end
+                                while tick()-t0<2 do local i=nf(cf.Position,P2) if i then P2.t[a.i]=i;P2.k[i]=a.i;break end task.wait(.05) end
                             end
-                        elseif a.t=="U" then
-                            local UP=ens("u","RemoteFunctions","UpgradeTower")
-                            local i=P2.t[a.i];if UP and i and i.Parent then pcall(function() UP:InvokeServer(i) end) end
-                        elseif a.t=="S" then
-                            local SE=ens("s","RemoteFunctions","SellTower")
-                            local i=P2.t[a.i];if SE and i and i.Parent then pcall(function() SE:InvokeServer(i) end);P2.t[a.i]=nil;P2.k[i]=nil end
-                        elseif a.t=="W" then
-                            local SK=ens("w","RemoteEvents","SkipWaveVote");if SK then pcall(function() SK:FireServer(1) end) end
-                        elseif a.t=="G" then
-                            local SP=ens("g","RemoteEvents","SetGameSpeed");if SP then pcall(function() SP:FireServer(a.v) end) end
+                        elseif a.t=="U" then local UP=ens("u","RemoteFunctions","UpgradeTower") local i=P2.t[a.i] if UP and i and i.Parent then pcall(function() UP:InvokeServer(i) end) end
+                        elseif a.t=="S" then local SE=ens("s","RemoteFunctions","SellTower") local i=P2.t[a.i] if SE and i and i.Parent then pcall(function() SE:InvokeServer(i) end)P2.t[a.i]=nil;P2.k[i]=nil end
+                        elseif a.t=="W" then local SK=ens("w","RemoteEvents","SkipWaveVote") if SK then pcall(function() SK:FireServer(1) end) end
+                        elseif a.t=="G" then local SP=ens("g","RemoteEvents","SetGameSpeed") if SP then pcall(function() SP:FireServer(a.v) end) end
                         end
                     end
                     P2.i=P2.i+1
                 end
-                if Cfg.pl then
-                    print("[PLAY] loop finished — restarting")
-                    task.wait(2)
-                end
-            else
-                task.wait(1)
-            end
-        else
-            task.wait(.5)
-        end
+                if Cfg.pl then task.wait(2) end
+            else task.wait(1) end
+        else task.wait(.5) end
     end
 end)
 
-P:CreateDropdown({Name="Difficulty",Options={"Easy Mode","Medium Mode","Hard Mode","Insane Mode","Crazy Mode"},CurrentOption=Cfg.diff,Callback=function(o) set("diff",nm(o)) end})
-P:CreateDropdown({Name="Game Speed",Options={"1","1.50","2"},CurrentOption=tostring(Cfg.gs),
-    Callback=function(v)
-        local s=nm(v);set("gs",s)
-        local n=tonumber(s);if not n then return end
-        local g=ens("g","RemoteEvents","SetGameSpeed");if not g then return end
-        pcall(function() g:FireServer(n) end)
-    end})
-P:CreateToggle({Name="Auto Skip Wave",CurrentValue=Cfg.sk,Callback=function(v) set("sk",v);if v then lastW=nil;setVis(true)else setVis(false)end end})
-P:CreateToggle({Name="Auto Replay",CurrentValue=Cfg.rp,Callback=function(v) set("rp",v);if v then startRP()else rpL=false end end})
+-- PLAY TAB
+P:CreateDropdown({Name="Game Speed",Options={"1","1.50","2"},CurrentOption=tostring(Cfg.gs),Callback=function(v)
+    local s=nm(v);set("gs",s)
+    local n=tonumber(s) if not n then return end
+    local g=ens("g","RemoteEvents","SetGameSpeed") if not g then return end
+    pcall(function() g:FireServer(n) end)
+end})
+P:CreateToggle({Name="Auto Skip Wave",CurrentValue=Cfg.sk,Callback=function(v) set("sk",v) if v then lastW=nil;setVis(true)else setVis(false)end end})
+P:CreateToggle({Name="Auto Replay",CurrentValue=Cfg.rp,Callback=function(v) set("rp",v) if v then startRP()else rpL=false end end})
 P:CreateToggle({Name="Auto Lobby",CurrentValue=Cfg.lb,Callback=function(v) set("lb",v) end})
-P:CreateToggle({Name="Auto Start Map",CurrentValue=Cfg.st,Callback=function(v) set("st",v) end})
 
+-- MACRO TAB
 M:CreateInput({Name="Macro Name",CurrentValue=Cfg.mn,PlaceholderText="np. EasyFarm",RemoveTextAfterFocusLost=false,Callback=function(t) set("mn",t or "") end})
 cL=M:CreateLabel("Lobby 0 | Place 0 | Upgrade 0 | Sell 0")
-
 M:CreateButton({Name="Create/Save Macro",Callback=function()
     local n=(Cfg.mn~="" and Cfg.mn or "")
-    if n=="" then N("TD","Wpisz nazwę macro");return end
+    if n=="" then N("TD","Wpisz nazwę macro") return end
     if type(isfile)~="function" or not isfile(FO..n..".json") then wj(FO..n..".json",{}) end
     sel=n;set("sel",n)
     local f=lf();rd(sDD,f)
     if sDD then pcall(function() sDD:Set(n) end) end
     N("TD","Macro gotowe: "..n)
 end})
-
 sDD=M:CreateDropdown({Name="Saved Macros",Options=lf(),CurrentOption=Cfg.sel or "",Callback=function(o) sel=nm(o);set("sel",sel) end})
-
 local rToggle
 rToggle=M:CreateToggle({Name="Record Macro",CurrentValue=Cfg.rec,Callback=function(v)
     local on
     if type(v)=="table" then on=v.Value==true else on=v==true end
     set("rec",on)
     if on then
-        if Cfg.sel=="" then N("TD","Najpierw wybierz macro");return end
+        if Cfg.sel=="" then N("TD","Najpierw wybierz macro") return end
         resetRec();rec.active=true
         N("TD","Nagrywanie → "..Cfg.sel)
     else
@@ -358,65 +325,39 @@ rToggle=M:CreateToggle({Name="Record Macro",CurrentValue=Cfg.rec,Callback=functi
         resetRec()
     end
 end})
-
-M:CreateButton({Name="Load Macro",Callback=function()
-    if Cfg.sel=="" then N("TD","Wybierz macro");return end
-    local a=rj(FO..Cfg.sel..".json")
-    if not a or #a==0 then N("TD","Puste lub brak: "..Cfg.sel);return end
-    buf=a
-    N("TD","Załadowano: "..Cfg.sel.." ("..#a..")")
-end})
-
 M:CreateButton({Name="Delete Macro",Callback=function()
-    if Cfg.sel=="" then N("TD","Wybierz macro");return end
+    if Cfg.sel=="" then N("TD","Wybierz macro") return end
     if type(delfile)~="function" then return end
     pcall(delfile,FO..Cfg.sel..".json")
     local f=lf();rd(sDD,f)
     if sDD then pcall(function() sDD:Set("") end) end
-    sel="";set("sel","");N("TD","Usunięto")
+    sel="";set("sel","")
+    N("TD","Usunięto")
 end})
-
-M:CreateButton({Name="Refresh",Callback=function() local f=lf();rd(sDD,f);N("TD","Znaleziono "..#f.." macro") end})
-
 pToggle=M:CreateToggle({Name="Play Macro",CurrentValue=Cfg.pl,Callback=function(v)
     local on
     if type(v)=="table" then on=v.Value==true else on=v==true end
     set("pl",on)
-    if on then
-        if Cfg.sel=="" then N("TD","Najpierw Load Macro");return end
-        print("[PLAY] Auto Play ON — looping macro")
-    else
-        print("[PLAY] Auto Play OFF")
-    end
+    if on and Cfg.sel=="" then N("TD","Najpierw wybierz macro") end
 end})
 
-M:CreateButton({Name="Clear",Callback=function() buf=nil;resetRec();N("TD","Cleared") end})
-
+-- POST-LOAD
 _init=false
 task.spawn(function()
     task.wait(1.5)
     local gs=tonumber(Cfg.gs)
-    if gs then
-        local g=ens("g","RemoteEvents","SetGameSpeed")
-        if g then pcall(function() g:FireServer(gs) end) end
-    end
+    if gs then local g=ens("g","RemoteEvents","SetGameSpeed") if g then pcall(function() g:FireServer(gs) end) end end
     if Cfg.sk then lastW=nil;setVis(true) end
     if Cfg.rp then startRP() end
     if sDD and Cfg.sel~="" then pcall(function() sDD:Set(Cfg.sel) end) end
     if Cfg.rec and Cfg.sel~="" then
         resetRec();rec.active=true
-        if rToggle and type(rToggle.Set)=="function" then pcall(function() rToggle:Set(true) end) end
+        if rToggle and rToggle.Set then pcall(function() rToggle:Set(true) end) end
     elseif Cfg.rec then
         Cfg.rec=false;save()
-        if rToggle and type(rToggle.Set)=="function" then pcall(function() rToggle:Set(false) end) end
+        if rToggle and rToggle.Set then pcall(function() rToggle:Set(false) end) end
     end
-    if Cfg.pl and Cfg.sel~="" then
-        if pToggle and type(pToggle.Set)=="function" then pcall(function() pToggle:Set(true) end) end
-        print("[PLAY] Auto Play resumed — loop running")
-    else
-        if pToggle and type(pToggle.Set)=="function" then pcall(function() pToggle:Set(Cfg.pl==true) end) end
-    end
-    print("[CFG] loaded:",Cfg.diff,Cfg.gs,Cfg.mn,"rec="..tostring(Cfg.rec),"pl="..tostring(Cfg.pl))
+    if pToggle and pToggle.Set then pcall(function() pToggle:Set(Cfg.pl==true) end) end
 end)
 
 rfC()
